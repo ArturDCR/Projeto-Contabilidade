@@ -18,7 +18,10 @@ class Screen_xml:
         self.__frame_central.place(relx=0.5, rely=0.5, anchor="center")  # Centraliza
 
         # Botões dentro do frame centralizado
-        self.__upload_base_button = tk.Button(self.__frame_central, text='Upload dados', command=lambda: self.__upload_file('Dados'))
+        self.__upload_base_button = tk.Button(self.__frame_central, text='Upload Dados', command=lambda: self.__upload_file('Dados'))
+        self.__upload_base_button.pack(pady=10)
+
+        self.__upload_base_button = tk.Button(self.__frame_central, text='Upload Template', command=lambda: self.__upload_file('Template'))
         self.__upload_base_button.pack(pady=10)
 
         self.__analyze_button = tk.Button(self.__frame_central, text='Resultado', command=self.__run_analyzer)
@@ -41,6 +44,8 @@ class Screen_xml:
             
             if upload_type == 'Dados':
                 new_file_name = 'data.xlsx'
+            elif upload_type == 'Template':
+                new_file_name = 'Template.xml'
             else:
                 new_file_name = file_path.split("/")[-1]
 
