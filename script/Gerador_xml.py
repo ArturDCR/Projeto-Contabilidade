@@ -1,0 +1,62 @@
+import pandas as pd
+from lxml import etree
+import os
+
+class Gerador_xml:
+    def __init__(self, caminho_template='./data/Template.xml', caminho_excel='./data/Base.xlsx'):
+        self._caminho_template = caminho_template
+        self._caminho_excel = caminho_excel
+        self.__downloads_path = os.path.join(os.path.expanduser("~"), "Downloads")
+        self.__output_file_path = os.path.join(self.__downloads_path, "Resultado.xml")
+
+
+    def __formatar_cpf(self, cpf):
+        cpf_limpo = str(cpf).replace('.', '').replace('-', '')
+        return cpf_limpo.zfill(11)
+
+    def iniciar(self):
+        # Carregar dados do Excel SEM cabeçalho
+        df = pd.read_excel(self._caminho_excel, header=None)
+
+        # Processar coluna de CPF (terceira coluna, índice 2)
+        df[2] = df[2].apply(self.__formatar_cpf)
+
+        # Carregar template XML
+        parser = etree.XMLParser(remove_blank_text=True)
+        arvore = etree.parse(self._caminho_template, parser)
+        root = arvore.getroot()
+
+        # Encontrar o elemento CprDhCadastrar
+        cpr_dh = root.find('.//{http://services.docHabil.cpr.siafi.tesouro.fazenda.gov.br/}CprDhCadastrar')
+
+        # Remover o placeholder original
+        for outros_lanc in cpr_dh.findall('{http://services.docHabil.cpr.siafi.tesouro.fazenda.gov.br/}outrosLanc'):
+            cpr_dh.remove(outros_lanc)
+
+        # Adicionar novos elementos (sem namespaces extras)
+        for _, row in df.iterrows():
+            outros_lanc = etree.Element("outrosLanc")
+            
+            num_seq_item = etree.SubElement(outros_lanc, "numSeqItem")
+            num_seq_item.text = str(row.iloc[0])  # Acessa por posição
+            
+            cod_sit = etree.SubElement(outros_lanc, "codSit")
+            cod_sit.text = "LDV003"
+            
+            vlr = etree.SubElement(outros_lanc, "vlr")
+            vlr.text = f"{float(row.iloc[1]):.2f}"
+            
+            txt_inscr_a = etree.SubElement(outros_lanc, "txtInscrA")
+            txt_inscr_a.text = str(row.iloc[2])
+            
+            num_class_a = etree.SubElement(outros_lanc, "numClassA")
+            num_class_a.text = str(row.iloc[3])
+            
+            cpr_dh.append(outros_lanc)
+
+        # # Atualizar quantidade no trailler
+        # trailler = root.find('.//{http://www.tesouro.gov.br/siafi/submissao}trailler')
+        # trailler.find('.//{http://www.tesouro.gov.br/siafi/submissao}quantidadeDetalhe').text = str(len(df))
+
+        # Salvar arquivo XML final
+        arvore.write(self.__output_file_path, encoding='utf-8', xml_declaration=True, pretty_print=True)
