@@ -1,3 +1,7 @@
 *.vscode
-**/Base.xlsx
-**/Template.xml
+.venv/
+__pycache__/
+*.pyc
+*.xlsx
+*.pdf
+*.xml
